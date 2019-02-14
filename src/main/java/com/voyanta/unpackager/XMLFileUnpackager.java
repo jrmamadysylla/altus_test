@@ -39,7 +39,8 @@ public class XMLFileUnpackager extends AbstractFileUnpackager {
 
 		try {
 			csvFile = Files.createTempFile("", ".csv").toFile();
-			this.xmlFileFormat = new XMLFileFormatValidator(this.fileDTO.getInputStream(), this.fileDTO.getName()).validate();
+			this.xmlFileFormat = new XMLFileFormatValidator(this.fileDTO.getInputStream(), this.fileDTO.getName())
+					.validate();
 			this.convertAndSave(csvFile);
 			csvFileDTO = new ValidFileDTO(csvFile, "CsvExport");
 			csvFileDTO.setEncoding(StandardCharsets.UTF_8.name());
@@ -55,8 +56,8 @@ public class XMLFileUnpackager extends AbstractFileUnpackager {
 	}
 
 	/**
-	 * Exercise 2 : fix convertAndSave() method to make the UT pass
-	 * Do not modify any other code than this method.
+	 * Exercise 2 : fix convertAndSave() method to make the UT pass Do not
+	 * modify any other code than this method.
 	 */
 	private void convertAndSave(File csvFile) throws Exception {
 		final String dstVersion = this.xmlFileFormat.getDstVersion();
@@ -65,13 +66,15 @@ public class XMLFileUnpackager extends AbstractFileUnpackager {
 		Set<String> invalidColumnHeader = new HashSet<>();
 		Map<String, String> sumCache = new HashMap<>();
 
-		try (final BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(csvFile, true), StandardCharsets.UTF_8))) {
+		try (final BufferedWriter bufferedWriter = new BufferedWriter(
+				new OutputStreamWriter(new FileOutputStream(csvFile, true), StandardCharsets.UTF_8))) {
 			bufferedWriter.write(UnpackagerUtils.createCsvRow(maxColumnCount, "", "CSV export", "", dstVersion));
 			bufferedWriter.newLine();
 			bufferedWriter.write(UnpackagerUtils.createCsvRowForDstColumnNames());
 			bufferedWriter.newLine();
 
-			for (int i = 0; i < rowCount; i++) {
+			int i = 0;
+			while (i < rowCount) {
 				final List<Map<String, String>> records = this.readRange(i);
 
 				for (Map<String, String> record : records) {
@@ -90,14 +93,19 @@ public class XMLFileUnpackager extends AbstractFileUnpackager {
 						}
 					}
 
-					values = validRecords.get(DstColumn.SUM.getId());
+					values = validRecords.get(DstColumn.SUM);
 
 					if (Objects.nonNull(values)) {
-						String sum = sumCache.get(values);
+						final StringBuilder sb = new StringBuilder();
+						Arrays.stream(values.split(",")).mapToInt(Integer::parseInt).sorted()
+								.forEachOrdered(value -> sb.append(value).append(','));
+
+						final String sortedValues = sb.deleteCharAt(sb.length() - 1).toString();
+						String sum = sumCache.get(sortedValues);
 
 						if (Objects.isNull(sum)) {
-							sum = addValues(values);
-							sumCache.put(values, sum);
+							sum = addValues(sortedValues);
+							sumCache.put(sortedValues, sum);
 						}
 
 						validRecords.put(DstColumn.SUM, sum);
@@ -111,7 +119,8 @@ public class XMLFileUnpackager extends AbstractFileUnpackager {
 
 					validRecords.put(DstColumn.ID, String.valueOf(i + 1));
 
-					bufferedWriter.write(UnpackagerUtils.createCsvRowWithValueMatchedToColumn(Arrays.asList(DstColumn.values()), validRecords));
+					bufferedWriter.write(UnpackagerUtils
+							.createCsvRowWithValueMatchedToColumn(Arrays.asList(DstColumn.values()), validRecords));
 					bufferedWriter.newLine();
 
 					i++;
@@ -127,7 +136,9 @@ public class XMLFileUnpackager extends AbstractFileUnpackager {
 	}
 
 	/**
-	 * Simple method to sum numbers from a String comma separated "x,y,z,..." => x + y + z + ...
+	 * Simple method to sum numbers from a String comma separated "x,y,z,..." =>
+	 * x + y + z + ...
+	 * 
 	 * @param values
 	 * @return
 	 */
@@ -143,8 +154,8 @@ public class XMLFileUnpackager extends AbstractFileUnpackager {
 	}
 
 	private List<Map<String, String>> readRange(final Integer rowIndexStart) {
-		final String expression = String.format("/*/*/*[position() >= %s and position() <= %s]",
-				rowIndexStart + 1, rowIndexStart + MAX_RANGE_COUNT);
+		final String expression = String.format("/*/*/*[position() >= %s and position() <= %s]", rowIndexStart + 1,
+				rowIndexStart + MAX_RANGE_COUNT);
 		final NodeList nodeList;
 		List<Map<String, String>> records = new ArrayList<>();
 

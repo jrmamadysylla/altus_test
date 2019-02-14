@@ -50,4 +50,5 @@ public class ExerciseApplicationTests {
 
 		assertTrue("Export is too slow, find a way to process below 1s", duration < 1000);
 	}
+	
 }
